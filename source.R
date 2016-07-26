@@ -46,8 +46,6 @@ T_PCA<-function(Y, rank=(dim(Y)[2]-1),alpha=0.75, sigmasq0=0.01,nu0=c(2,0.5), sc
   #i: 1, ..., d dimensions
   #j: 1, ..., n data numbers
   #m: MLE mean of data
-  #Xbar: posterior mean of X |Y
-  #Xsigma: posterior variance of X |Y
   #iter: total iteration number
   #N: total obervation number =n*d-length(omit)
   t.start=proc.time()
@@ -451,8 +449,7 @@ S_ROB<-function(Y, alpha=0.75, rank=0, screeplot=T, outlier.plot=T, robust.scali
       
       #1.prelimarily imputation via any mathod
       missloc=which(is.na(Y))
-      pp=PPCA(Y, rank=rank)
-      Y[missloc]=pp$fit[missloc]
+      Y[missloc]=rnorm(length(missloc))
       
       g_options$data=Y #impute
       
