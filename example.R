@@ -33,7 +33,7 @@ ex=simulation.data2(n=100, p=20, rank=5,
                  out.type="Bad",out.rate=0.15,  
                  out.parameter = x.vector[3] ,
                  score.sigma=diag(c(17,13.5,8,3,1)),data.plot = T )
-#black is before contamination (before error adding and outlier replacing)
+#black lines denote data points before contamination (before error adding and outlier replacing), while red lines denote data points after contamination.
 ########################## simulation codes ##############################
 for(seed in 1: n.sim){
   out.type=out.type.vector[seed]
