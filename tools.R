@@ -113,16 +113,6 @@ simulation.data2<-function(data.description=NA, n=NA, p=NA, rank=NA,
   
   contam.data=Y ## now, the data generating is done! 
   
-  ##belows are just providing data information such as outlier rate or score distributions and the like.
-  data.description=list(n=n, p=p, rank=rank, gen.V=gen.V,random.V=random.V, error.skew=error.skew, score.skew=score.skew, error.type="Normal", error.scale=error.scale, missing.rate=missing.rate)
-  data.description$score.type=ifelse(score.df==0, "Normal", paste("t(", score.df, ")"))
-  data.description$score.sigma=score.sigma
-  if(out.rate!=0){
-    data.description$out.type=out.type
-    data.description$out.rate=out.rate
-    data.description$out.parameter=out.parameter
-    if(out.type!="Unif") data.description$contam.k=contam.k
-  }
   
   # for the case someone want to see what the data looks like in one dimension.
   if(data.plot){
@@ -141,7 +131,7 @@ simulation.data2<-function(data.description=NA, n=NA, p=NA, rank=NA,
     plot(contam.data[,1],contam.data[,p], main="Red = contamination")
     points(contam.data[,1][contam.row],contam.data[,p][contam.row], col="red", pch=19)
   }
-  return(list(contam.data=contam.data, true.V=true.V, true.g=true.g, true.mu=true.mu, true.Ramb=true.Ramb, contam.row=contam.row, row.pure=row.pure, data.description=data.description))
+  return(list(contam.data=contam.data, true.V=true.V, true.g=true.g, true.mu=true.mu, true.Ramb=true.Ramb, contam.row=contam.row, row.pure=row.pure ))
 }
 
 
@@ -200,8 +190,7 @@ working.machine<-function(data.object=NA, data.description=NA,alpha=0.75,
 }
 
 
-## Those four functions (K.angle, maxsub, pc1.angle, f.angle) are for measuring each method's performance
-## They are used in working.machine above.
+##those four functions (K.angle, maxsub, pc1.angle, f.angle) are for measuring each method's performance
 K.angle<-function(V, V.hat){
   return(acos(sqrt(min(svd(crossprod(V, V.hat)%*%crossprod(V.hat, V))$d)))/(pi/2))
 }
