@@ -1,9 +1,9 @@
-##those are libraries for PCA and T-PCA
+## Those are libraries for PCA and T-PCA
 require(matrixcalc)
 require(car)
 require(rotations)
 require(pracma)
-##those are libraries for ROBPCA and S-ROB
+## Those are libraries for ROBPCA and S-ROB
 require(rrcov)
 require(rospca)
 ## This is a library for ROBPCA 
