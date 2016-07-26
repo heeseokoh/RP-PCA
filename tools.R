@@ -1,0 +1,220 @@
+## these libraries are for data generating.
+require(mvtnorm)
+require(fBasics)
+require(pracma)
+
+
+##############################################################################
+##########  simulation data generate  ########################################
+##############################################################################
+
+#argument description: 
+
+#out.type is outlier types ="Unif", "Bad", "Orthogonal".
+#score.sigma should be a diagnal matrix with size rank x rank.
+# if gen.v=T (default is T), true V would be the v used to make true data. (default), true.mu, true.Rambda also.
+# if gen.v=F, true V would be the v of svd of trud data. true.mu, true.Rambda also.
+#meaningless argument: error.type=NULL, score.type=NULL
+
+simulation.data2<-function(data.description=NA, n=NA, p=NA, rank=NA,
+                           score.sigma=NA, score.df=0, score.skew=0, random.V=F,
+                           error.skew=0, error.scale=0,
+                           out.rate=0,error.df=0, out.type=NA, out.parameter=8,contam.k=0,
+                           data.plot=F, twodim.plot=F, gen.V=T, error.type=NULL, score.type=NULL, missing.rate=0,seed=NA){
+  if(!is.na(data.description[1])){
+    return(do.call("simulation.data2", data.description))
+  }
+  if(!is.na(seed)) set.seed(seed)
+  ##if out.parameter is 0, then it will make non contemed data. i.e, its out.rate=0
+  if(out.parameter==0) out.rate=0
+  
+  
+  ##for scores
+  if(is.na(score.sigma[1])) if(rank==1)score.sigma=1 else score.sigma=diag( (rank:1)*4) 
+  
+  if(score.skew!=0) {
+    Tk=matrix(0, nrow=n, ncol=rank)
+    for(j in 1:rank) Tk[, j]= rnig(n, alpha = 1, beta = score.skew,delta=2*(rank-j+1))
+  }else if(score.df==0){
+    if(rank==1) Tk=rnorm(n, score.sigma ) else Tk=rmvnorm(n=n, sigma = score.sigma)
+  }else{
+    Tk=rmvt(n=n, sigma = score.sigma, df=score.df)
+  }
+  
+  ##for PC vectors and data.
+  if(random.V) {
+    # generate PC vectors.
+    V <- rortho(p)
+    true.g=tcrossprod(Tk,V[,1:rank])
+    true.V<-V[,1:rank]
+  }else{
+    V=diag(p)
+    true.V<-P<-diag(p)[,1:rank]
+    true.g<-cbind(Tk, matrix(0, nrow=n, ncol=(p-rank)))
+  } 
+  
+  #for error
+  if(error.skew==0){
+    if(error.scale==0){
+      Y=true.g
+    }else{
+      if(error.df==0){
+        E=rmvnorm(n = n, sigma = diag(rep( error.scale,p)))
+      }else{
+        E=rmvt(n = n, sigma = diag(rep( error.scale,p)),df = error.df)
+      }
+      Y=true.g+E
+    }
+  }else{ #skew error case
+    E=matrix(0, nrow=n, ncol=p)
+    if(error.scale != 0) for(j in 1:p) E[, j]= rnig(n, alpha = 1, beta = error.skew , delta=(error.scale))
+    Y=true.g+E
+  }
+  
+  
+  #for outliers.
+  if(out.rate!=0){
+    n.out=ceiling(n*out.rate)
+    row.pure=(n.out+1):n
+    contam.row=1:n.out
+    if(out.type=="Unif"){
+      Y[contam.row,]=matrix(runif(n.out*p,-out.parameter,out.parameter), nrow=p)
+    }else{
+      if(out.type=="Orthogonal"){
+        contam.center=V[,rank+1]*out.parameter
+      }else if(out.type=="Bad"){
+        contam.center=apply(V[,(1:(rank+1))]*out.parameter, 1, sum)
+      }
+      Y[contam.row,]=rmvnorm(n=length(contam.row), mean =contam.center ,sigma =contam.k*var(Y)+0.0001*diag(p))
+    }
+  }else{
+    n.out=0
+    row.pure=1:n
+    contam.row=NA
+  }
+  
+  
+  if(gen.V){
+    true.mu=rep(0, p)
+    true.Ramb=score.sigma
+  }else{
+    true.mu=apply(true.g[row.pure,], 2, mean)
+    svd=svd(var(true.g[row.pure,]), nv=rank)
+    true.Ramb=svd$d
+    true.V<-svd$v
+  }
+  
+  
+  if(missing.rate>0){
+    n.miss=ceiling((n*p)*missing.rate)
+    miss=sample(1:(n*p), n.miss)
+    Y[miss]=NA
+  }
+  
+  contam.data=Y ## now, the data generating is done! 
+  
+  ##belows are just providing data information such as outlier rate or score distributions and the like.
+  data.description=list(n=n, p=p, rank=rank, gen.V=gen.V,random.V=random.V, error.skew=error.skew, score.skew=score.skew, error.type="Normal", error.scale=error.scale, missing.rate=missing.rate)
+  data.description$score.type=ifelse(score.df==0, "Normal", paste("t(", score.df, ")"))
+  data.description$score.sigma=score.sigma
+  if(out.rate!=0){
+    data.description$out.type=out.type
+    data.description$out.rate=out.rate
+    data.description$out.parameter=out.parameter
+    if(out.type!="Unif") data.description$contam.k=contam.k
+  }
+  
+  # for the case someone want to see what the data looks like in one dimension.
+  if(data.plot){
+    par(mfrow=c(min(4, p) ,3))
+    for(i in sort(sample(1:p, min(4, p))  )){
+      plot(1:n, true.g[,i], main=paste("black= before contamination[",i,"]"), type="l", ylim=range(contam.data[,i]))
+      lines(1:n, contam.data[,i], col="red")
+      hist(contam.data[,i])
+      if(error.skew!=0) hist(E[,i]) else hist(true.g[,i])
+      
+    }
+  }
+  # for the case someone want to see what the data looks like in two dimensions.
+  if(twodim.plot)
+  {par(mfrow=c(1,1))
+    plot(contam.data[,1],contam.data[,p], main="Red = contamination")
+    points(contam.data[,1][contam.row],contam.data[,p][contam.row], col="red", pch=19)
+  }
+  return(list(contam.data=contam.data, true.V=true.V, true.g=true.g, true.mu=true.mu, true.Ramb=true.Ramb, contam.row=contam.row, row.pure=row.pure, data.description=data.description))
+}
+
+
+##############################################################################
+##########  working machine for simulation    ################################ 
+##############################################################################
+
+## This is simulation machine. 
+## This get a data object which is generated by the function simulation.data2 then run given methods such as CPCA, T-PCA, ROBPCA, S-ROB and RP-PCA
+## As a result, it gives the measures of each mothod for the one given data object.
+
+# Therefore, the five methods should be loaded before run this working machine. 
+# by codes like
+# source("source.R") or source("directory/source.R") 
+
+working.machine<-function(data.object=NA, data.description=NA,alpha=0.75, 
+                          required.rank=1,outlier.plot=F,n.direct=250,
+                          method=c("CPCA", "T_PCA","ROB","S_ROB","RP_PCA"),
+                          measure=c("maxsub","f.angle")){ 
+  
+  if(is.na(data.object[1])) data.object=do.call("simulation.data", data.description)
+  
+  n.method=length(method)
+  n.measure=length(measure)
+  
+  result<-decomp<-list()
+  result.matrix=matrix(0, ncol= n.method)
+  colnames(result.matrix)=method
+  
+  
+  for (i in  1:n.method){
+    conduct=tryCatch({
+      decomp[[i]]=do.call(method[i], c(list(data.object$contam.data), rank=required.rank,alpha=alpha,screeplot=F, outlier.plot=outlier.plot, n.direct=n.direct))
+      1
+    }, error = function(e) {
+      return(0)
+    })
+  }
+  
+  for(i in 1:n.measure){
+    for(j in 1:n.method) {
+      conduct=tryCatch({
+        result.matrix[j]=do.call(measure[i],list(decomp[[j]], data.object, required.rank))
+        1
+      }, error = function(e) {
+        return(0)
+      })
+      if(conduct==0){result.matrix[j]=NA}
+    }
+    
+    result[[i]]=result.matrix
+  }
+  names(result)= measure
+  
+  return(list(result=result, method=method, measure=measure,pca=decomp,data.object=data.object, required.rank=required.rank, alpha=alpha))
+}
+
+
+## Those four functions (K.angle, maxsub, pc1.angle, f.angle) are for measuring each method's performance
+## They are used in working.machine above.
+K.angle<-function(V, V.hat){
+  return(acos(sqrt(min(svd(crossprod(V, V.hat)%*%crossprod(V.hat, V))$d)))/(pi/2))
+}
+maxsub<-function(pca.object, data.object, rank){
+  if(rank==1) {return(K.angle(pca.object$V , data.object$true.V))}else{return(K.angle(pca.object$V[,1:rank], data.object$true.V[,1:rank]))}
+}
+
+pc1.angle<-function(V, V.hat){ 
+  if(is.null(dim(V))) return(acos(abs(sum(V*V.hat)))/(pi/2))
+  return(acos(abs(crossprod(V[,1],V.hat[,1])))/(pi/2))
+} 
+f.angle<-function(pca.object, data.object,...){
+  return(pc1.angle(pca.object$V, data.object$true.V))
+}
+
+
