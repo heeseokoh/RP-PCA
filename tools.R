@@ -158,7 +158,7 @@ working.machine<-function(data.object=NA, data.description=NA,alpha=0.75,
   result.matrix=matrix(0, ncol= n.method)
   colnames(result.matrix)=method
   
-  
+  #conducting each method
   for (i in  1:n.method){
     conduct=tryCatch({
       decomp[[i]]=do.call(method[i], c(list(data.object$contam.data), rank=required.rank,alpha=alpha,screeplot=F, outlier.plot=outlier.plot, n.direct=n.direct))
@@ -168,6 +168,7 @@ working.machine<-function(data.object=NA, data.description=NA,alpha=0.75,
     })
   }
   
+  #measuring the performance of each method through the results of each method, decomp[[j]].
   for(i in 1:n.measure){
     for(j in 1:n.method) {
       conduct=tryCatch({
