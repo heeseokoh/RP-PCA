@@ -117,12 +117,9 @@ simulation.data2<-function(data.description=NA, n=NA, p=NA, rank=NA,
   # for the case someone want to see what the data looks like in one dimension.
   if(data.plot){
     par(mfrow=c(min(4, p) ,3))
-    for(i in sort(sample(1:p, min(4, p))  )){
-      plot(1:n, true.g[,i], main=paste("black= before contamination[",i,"]"), type="l", ylim=range(contam.data[,i]))
+    for(i in 1:12){
+      plot(1:n, true.g[,i], main=paste("variable[",i,"]"), type="l", ylim=range(contam.data[,i]))
       lines(1:n, contam.data[,i], col="red")
-      hist(contam.data[,i])
-      if(error.skew!=0) hist(E[,i]) else hist(true.g[,i])
-      
     }
   }
   # for the case someone want to see what the data looks like in two dimensions.
