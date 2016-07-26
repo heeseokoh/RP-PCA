@@ -190,7 +190,8 @@ working.machine<-function(data.object=NA, data.description=NA,alpha=0.75,
 }
 
 
-##those four functions (K.angle, maxsub, pc1.angle, f.angle) are for measuring each method's performance
+## Those four functions (K.angle, maxsub, pc1.angle, f.angle) are for measuring each method's performance
+## They are called within working.machine
 K.angle<-function(V, V.hat){
   return(acos(sqrt(min(svd(crossprod(V, V.hat)%*%crossprod(V.hat, V))$d)))/(pi/2))
 }
