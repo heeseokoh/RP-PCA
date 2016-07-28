@@ -1,6 +1,6 @@
 # RP-PCA
 
-Here are codes for reproducing the first simulation introduced in RP-PCA paper.
+Here are codes for reproducing the first1 simulation introduced in RP-PCA paper.
 
 In source.R file, five PCA methods (CPCA, T-PCA, ROBPCA, S-ROB, RP-PCA) are coded. In fact, functions of ROBPCA and S-ROB are already implemented as PcaHubert in rrcov package and as robpca (with skew=T) in rospca package respectively. In this file, the resultant objects of those two functions are renamed without any change of the resultant values just to make them suitable for our simulation machine.
 
